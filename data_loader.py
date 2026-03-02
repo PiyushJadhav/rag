@@ -1,0 +1,40 @@
+from openai import OpenAI
+from llama_index.readers.file import PDFReader
+from llama.index.core.node_parser import SentenceSplitter
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI()
+
+# need to chunk down pdf because can't just put a whole pdf into the database
+EMBED_MODEL = "text-embedding-3-large"
+EMBED_DIM = 3072
+
+splitter = SentenceSplitter(chunk_size=1000, chunk_overlap=200)
+
+# gather data from pdf and then chunk them into small pieces
+def load_and_chunk_pdf(path: str):
+    docs = PDFReader().load_data(file=path)
+    texts = [d.text for d in docs if getattr(d, "text", None)]
+    chunks = []
+
+    for t in texts:
+        chunks.extend(splitter.split_text(t))
+    
+    return chunks
+
+# use openAI API to embedd the chunked data
+def embed_texts(texts: list[str]):
+    response = client.embeddings.create(
+        model=EMBED_MODEL,
+        input=texts
+    )
+
+    return [item.embedding for item in response.data]
+
+
+
+
+
+
