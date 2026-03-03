@@ -8,7 +8,7 @@ class QdrantStorage:
         if not self.client.collection_exists(self.collection):
             self.client.create_collection(
                 collection_name = self.collection,
-                vectors_config = VectorParams(size=self.dim, distance=Distance.COSINE)
+                vectors_config = VectorParams(size=dim, distance=Distance.COSINE)
             )
     
     def upsert(self, ids, vectors, payloads):
@@ -16,12 +16,12 @@ class QdrantStorage:
         self.client.upsert(self.collection, points = points)
 
     def search(self, query_vector, top_k=5):
-        results = self.client.search(
+        results = self.client.query_points(
             collection_name = self.collection,
-            query_vector=query_vector,
+            query=query_vector,
             with_payload = True,
             limit = top_k
-        )
+        ).points
 
         contexts = []
         sources = set()
@@ -36,4 +36,4 @@ class QdrantStorage:
                 contexts.append(text)
                 sources.add(source)
         
-        return {"context": contexts, "sources": list(sources)}
+        return {"contexts": contexts, "sources": list(sources)}
